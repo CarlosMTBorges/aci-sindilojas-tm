@@ -1,0 +1,22 @@
+"use client";
+
+import {FormEvent,useState} from "react";
+import type {Resource} from "@/lib/cms";
+
+type Row=Record<string,unknown>;
+function display(row:Row){return String(row.title||row.name||row.label||row.key||row.email||row.id||"");}
+
+export function ResourceManager({section,resource,initialRows}:{section:string;resource:Resource;initialRows:Row[]}){
+  const[rows,setRows]=useState(initialRows);const[open,setOpen]=useState(false);const[busy,setBusy]=useState(false);const[message,setMessage]=useState("");
+  async function create(event:FormEvent<HTMLFormElement>){
+    event.preventDefault();setBusy(true);setMessage("");const form=new FormData(event.currentTarget);const payload:Row={};
+    for(const field of resource.fields){const raw=form.get(field.name);if(field.type==="file"&&raw instanceof File&&raw.size){const upload=new FormData();upload.set("file",raw);const uploaded=await fetch("/api/upload",{method:"POST",body:upload});const result=await uploaded.json();if(!uploaded.ok){setMessage(result.error||"Falha ao enviar arquivo.");setBusy(false);return}payload[field.name]=result.url}else if(field.type==="checkbox")payload[field.name]=raw==="on";else if(field.type==="number")payload[field.name]=raw?Number(raw):null;else if(field.type==="json"){try{payload[field.name]=raw?JSON.parse(String(raw)):{};}catch{setMessage(`O campo ${field.label} precisa ser um JSON válido.`);setBusy(false);return}}else payload[field.name]=raw||null}
+    const response=await fetch(`/api/admin/${section}`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});const result=await response.json();setBusy(false);
+    if(!response.ok){setMessage(result.error||"Não foi possível salvar.");return}setRows([result,...rows]);setOpen(false);event.currentTarget.reset();
+  }
+  async function remove(id:unknown){if(!confirm("Remover este item?"))return;const response=await fetch(`/api/admin/${section}?id=${id}`,{method:"DELETE"});if(response.ok)setRows(rows.filter(row=>row.id!==id));}
+  async function toggle(row:Row){const next=row.status==="published"?"draft":"published";const response=await fetch(`/api/admin/${section}`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:row.id,status:next})});if(response.ok)setRows(rows.map(item=>item.id===row.id?{...item,status:next}:item));}
+  return <><header className="admin-heading"><div><span className="eyebrow">Conteúdo</span><h1>{resource.title}</h1><p>{rows.length} {rows.length===1?"registro":"registros"}</p></div>{!resource.readOnly&&<button className="button button-blue" onClick={()=>setOpen(!open)}>{open?"Fechar":"Novo cadastro"}</button>}</header>
+  {open&&<form className="admin-form" onSubmit={create}>{resource.fields.map(field=><label key={field.name} className={field.type==="textarea"||field.type==="json"?"wide":""}><span>{field.label}{field.required&&" *"}</span>{field.type==="textarea"||field.type==="json"?<textarea name={field.name} rows={field.type==="json"?7:4} required={field.required} placeholder={field.type==="json"?'{"texto":"Conteúdo"}':undefined}/>:field.type==="select"?<select name={field.name} required={field.required}>{field.options?.map(option=><option key={option} value={option}>{option}</option>)}</select>:field.type==="checkbox"?<input name={field.name} type="checkbox"/>:<input name={field.name} type={field.type||"text"} accept={field.type==="file"?"image/*,.pdf,.doc,.docx":undefined} required={field.required}/>} {field.help&&<small>{field.help}</small>}</label>)}{message&&<div className="form-message error">{message}</div>}<button className="button button-yellow" disabled={busy}>{busy?"Salvando…":`Salvar ${resource.singular}`}</button></form>}
+  <section className="admin-table"><div className="admin-table-head"><span>Item</span><span>Status / tipo</span><span>Atualização</span><span>Ações</span></div>{rows.length===0?<div className="admin-empty">Nenhum registro ainda. Use “Novo cadastro” para começar.</div>:rows.map(row=><article key={String(row.id||row.key)}><strong>{display(row)}</strong><span className={`status status-${row.status||"new"}`}>{String(row.status||row.kind||row.form_type||"ativo")}</span><time>{row.updated_at||row.created_at?new Date(String(row.updated_at||row.created_at)).toLocaleDateString("pt-BR"):"—"}</time><div>{!resource.readOnly&&Boolean(row.status)&&<button onClick={()=>toggle(row)}>{row.status==="published"?"Despublicar":"Publicar"}</button>}<button className="danger" onClick={()=>remove(row.id)}>Excluir</button></div></article>)}</section></>;
+}

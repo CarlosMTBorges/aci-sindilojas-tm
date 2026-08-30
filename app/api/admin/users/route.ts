@@ -1,0 +1,9 @@
+import {NextResponse} from "next/server";
+import {z} from "zod";
+import {auth} from "@/lib/auth";
+import {getAdminUser} from "@/lib/admin-auth";
+import {database} from "@/lib/db";
+
+const createSchema=z.object({name:z.string().min(2).max(120),email:z.string().email(),password:z.string().min(8),role:z.enum(["admin","editor"])});
+export async function POST(request:Request){if(!await getAdminUser())return NextResponse.json({error:"Não autorizado"},{status:401});const parsed=createSchema.safeParse(await request.json());if(!parsed.success)return NextResponse.json({error:"Revise nome, e-mail, senha e perfil."},{status:400});const{name,email,password,role}=parsed.data;const created=await auth.signUp.email({name,email,password});if(created.error)return NextResponse.json({error:created.error.message||"Não foi possível criar o acesso."},{status:400});const authUser=created.data?.user;if(!authUser)return NextResponse.json({error:"Usuário não retornado pela autenticação."},{status:500});const rows=await database().query("INSERT INTO admin_profiles (auth_user_id,email,name,role,active) VALUES ($1,$2,$3,$4,true) ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,role=EXCLUDED.role,active=true,updated_at=now() RETURNING id,name,email,role,active,created_at",[authUser.id,email.toLowerCase(),name,role]);return NextResponse.json(rows[0])}
+export async function PATCH(request:Request){if(!await getAdminUser())return NextResponse.json({error:"Não autorizado"},{status:401});const body=await request.json();if(!body.id||typeof body.active!=="boolean")return NextResponse.json({error:"Dados inválidos"},{status:400});const rows=await database().query("UPDATE admin_profiles SET active=$1,updated_at=now() WHERE id=$2 RETURNING id,name,email,role,active,created_at",[body.active,body.id]);return NextResponse.json(rows[0])}

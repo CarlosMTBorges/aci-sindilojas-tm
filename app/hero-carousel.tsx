@@ -1,0 +1,10 @@
+"use client";
+
+import Link from "next/link";
+import {useEffect,useState} from "react";
+import {ArrowRight} from "lucide-react";
+import {Carousel,CarouselApi,CarouselContent,CarouselItem,CarouselNext,CarouselPrevious} from "@/components/ui/carousel";
+
+type Banner={id:string;title:string|null;subtitle:string|null;desktop_image_url:string;mobile_image_url:string|null;image_alt:string;primary_button_label:string|null;primary_button_url:string|null;secondary_button_label:string|null;secondary_button_url:string|null;image_only:boolean};
+
+export function HeroCarousel({banners}:{banners:Banner[]}){const[api,setApi]=useState<CarouselApi>();useEffect(()=>{if(!api||banners.length<2)return;const timer=setInterval(()=>api.scrollNext(),6500);return()=>clearInterval(timer)},[api,banners.length]);return <Carousel className="hero-carousel" opts={{loop:true}} setApi={setApi}><CarouselContent className="ml-0">{banners.map((banner,index)=><CarouselItem className="pl-0" key={banner.id}><section className={`hero ${banner.image_only?"hero-image-only":""}`}><picture className="hero-media"><source media="(max-width:760px)" srcSet={banner.mobile_image_url||banner.desktop_image_url}/><img src={banner.desktop_image_url} alt={banner.image_alt}/></picture>{!banner.image_only&&<div className="container hero-content"><span className="eyebrow light">ACI + Sindilojas Três de Maio</span><h1>{banner.title}</h1><p>{banner.subtitle}</p><div className="hero-actions">{banner.primary_button_label&&banner.primary_button_url&&<Link className="button button-yellow" href={banner.primary_button_url}>{banner.primary_button_label} <ArrowRight size={18}/></Link>}{banner.secondary_button_label&&banner.secondary_button_url&&<Link className="button button-ghost" href={banner.secondary_button_url}>{banner.secondary_button_label}</Link>}</div></div>}{index===0&&<div className="hero-counter"><strong>47</strong><span>anos construindo<br/>desenvolvimento</span></div>}</section></CarouselItem>)}</CarouselContent>{banners.length>1&&<div className="hero-carousel-controls"><CarouselPrevious/><CarouselNext/></div>}</Carousel>}
