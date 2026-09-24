@@ -34,7 +34,7 @@ export function RichTextEditor({ name, initialHtml }: { name: string; initialHtm
     <div className="rich-editor-toolbar" role="toolbar" aria-label="Formatação do texto">
       {tools.map((tool) => <button key={tool.command} type="button" title={tool.label} aria-label={tool.label} className={tool.className} onMouseDown={(event) => event.preventDefault()} onClick={() => format(tool.command)}>{tool.text}</button>)}
     </div>
-    <div ref={editor} className="rich-editor-area" contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Corpo da notícia" onPaste={paste} onInput={(event) => setHtml(sanitizeRichText(event.currentTarget.innerHTML))} dangerouslySetInnerHTML={{ __html: html || "<p><br></p>" }} />
+    <div ref={editor} className="rich-editor-area" contentEditable suppressContentEditableWarning dir="ltr" role="textbox" aria-multiline="true" aria-label="Corpo da notícia" onPaste={paste} onInput={(event) => setHtml(sanitizeRichText(event.currentTarget.innerHTML))} dangerouslySetInnerHTML={{ __html: html || "<p><br></p>" }} />
     <input type="hidden" name={name} value={html} />
     <small>Formate os parágrafos usando a barra acima. Também é possível colar texto no campo.</small>
   </div>;
