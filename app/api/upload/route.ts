@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/admin-auth";
 
-export const runtime = "edge";
-
 export async function POST(request: Request) {
   const user = await getAdminUser();
   if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
