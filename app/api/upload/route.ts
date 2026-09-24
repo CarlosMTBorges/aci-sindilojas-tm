@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     if (process.env.VERCEL) {
-      if (!process.env.BLOB_READ_WRITE_TOKEN) return NextResponse.json({ error: "O armazenamento de arquivos do Vercel não está conectado." }, { status: 503 });
+      // The Vercel Blob SDK uses the project's OIDC credentials automatically.\n      // Do not require BLOB_READ_WRITE_TOKEN; linked stores provide OIDC instead.
       const { put } = await import("@vercel/blob");
       const blob = await put(`aci/${Date.now()}-${file.name}`, file, { access: "public", addRandomSuffix: true });
       return NextResponse.json({ url: blob.url });
