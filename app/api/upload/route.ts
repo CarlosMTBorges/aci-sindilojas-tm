@@ -9,7 +9,8 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) return NextResponse.json({ error: "Arquivo obrigatório" }, { status: 400 });
-    if (file.size > 10_000_000) return NextResponse.json({ error: "O arquivo deve ter até 10 MB." }, { status: 413 });
+    // Keep uploads below serverless request-body limits (notably Vercel's).
+    if (file.size > 3_800_000) return NextResponse.json({ error: "O arquivo deve ter até 3,8 MB após a compressão." }, { status: 413 });
     if (!file.type.startsWith("image/") && !["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.type)) {
       return NextResponse.json({ error: "Formato de arquivo não permitido." }, { status: 415 });
     }

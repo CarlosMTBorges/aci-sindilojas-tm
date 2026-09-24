@@ -17,14 +17,29 @@ function fieldValue(row:Row|null,field:Field){
 function makeSlug(value:string){return value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 async function readResponse(response:Response){const text=await response.text();try{return JSON.parse(text) as Row}catch{return {error:response.status===413?"O arquivo ou conteúdo excede o limite aceito. Reduza o tamanho da imagem e tente novamente.":`O servidor retornou um erro (${response.status}). Tente novamente.`}}}
 async function prepareUpload(file:File){
-  if(!file.type.startsWith("image/"))return file;
+  const uploadLimit=3_800_000;
+  if(!file.type.startsWith("image/")){
+    if(file.size>uploadLimit)throw new Error("O arquivo deve ter até 3,8 MB. Reduza o tamanho e tente novamente.");
+    return file;
+  }
   try{
-    const image=await createImageBitmap(file);const scale=Math.min(1,2000/Math.max(image.width,image.height));
-    const canvas=document.createElement("canvas");canvas.width=Math.round(image.width*scale);canvas.height=Math.round(image.height*scale);
-    canvas.getContext("2d")?.drawImage(image,0,0,canvas.width,canvas.height);image.close();
-    const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/webp",0.82));
-    return blob&&blob.size<file.size?new File([blob],`${file.name.replace(/\.[^.]+$/,"")}.webp`,{type:"image/webp"}):file;
-  }catch{return file}
+    const image=await createImageBitmap(file);
+    try{
+      for(const [maxDimension,quality] of [[2000,0.78],[1600,0.66],[1200,0.56]] as const){
+        const scale=Math.min(1,maxDimension/Math.max(image.width,image.height));
+        const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));
+        const context=canvas.getContext("2d");if(!context)continue;
+        context.drawImage(image,0,0,canvas.width,canvas.height);
+        const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/webp",quality));
+        if(blob&&blob.size<=uploadLimit)return new File([blob],file.name.replace(/\.[^.]+$/,"")+".webp",{type:"image/webp"});
+      }
+    }finally{image.close()}
+    throw new Error("Não foi possível reduzir esta imagem para até 3,8 MB. Escolha uma versão menor.");
+  }catch(error){
+    if(error instanceof Error&&error.message.includes("3,8 MB"))throw error;
+    if(file.size<=uploadLimit)return file;
+    throw new Error("Não foi possível processar esta imagem. Escolha uma versão com até 3,8 MB.");
+  }
 }
 
 export function ResourceManager({section,resource,initialRows}:{section:string;resource:Resource;initialRows:Row[]}){
