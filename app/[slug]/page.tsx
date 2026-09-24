@@ -26,6 +26,7 @@ const pages:Record<string,{eyebrow:string;title:string;text:string}>={
   "termos-de-uso":{eyebrow:"Transparência",title:"Termos de uso",text:"Condições para utilização dos conteúdos e serviços digitais da entidade."},
 };
 export function generateStaticParams(){return Object.keys(pages).map(slug=>({slug}))}
+export const dynamic="force-dynamic";
 
 async function PageBody({slug}:{slug:string}){
   if(slug==="sobre"){const about=await getSettingObject("about",aboutFallback);return <section className="section"><div className="container prose-grid"><div><span className="eyebrow">{about.history_eyebrow}</span><h2>{about.history_title}</h2></div><div className="prose"><p>{about.history_paragraph_1}</p><p>{about.history_paragraph_2}</p></div><article className="value-card"><strong>Missão</strong><p>{about.mission}</p></article><article className="value-card"><strong>Visão</strong><p>{about.vision}</p></article></div><div className="container leadership"><h2>Governança</h2><div><article><span>ACI</span><h3>{about.aci_president}</h3><p>Presidente</p></article><article><span>Sindilojas</span><h3>{about.sindilojas_president}</h3><p>Presidente</p></article></div></div></section>}
