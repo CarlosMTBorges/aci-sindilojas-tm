@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {CalendarDays,FileText,Home,Image,Inbox,Newspaper,Phone,UserCog,Users} from "lucide-react";
+import {CalendarDays,ContactRound,FileText,Home,Image,Inbox,Newspaper,Phone,Tags,UserCog,Users} from "lucide-react";
 
 const cards=[
   ["Home e Sobre","Textos institucionais do site","/admin/home",Home],
@@ -8,6 +8,8 @@ const cards=[
   ["Notícias e vídeos","Conteúdo editorial","/admin/noticias",Newspaper],
   ["Cursos e eventos","Calendário e inscrições","/admin/agenda",CalendarDays],
   ["Rede empresarial","Parceiros e associados","/admin/parceiros",Users],
+  ["Categorias de associados","Organize os segmentos cadastrados","/admin/categorias_associados",Tags],
+  ["Equipe e diretorias","Fotos, cargos e grupos institucionais","/admin/equipe",ContactRound],
   ["Documentos e vagas","Publicações úteis","/admin/legislacao",FileText],
   ["Caixa de entrada","Formulários e inscrições","/admin/formularios",Inbox],
   ["Contato e WhatsApps","Rodapé, redes sociais e canais","/admin/contato_rodape",Phone],
